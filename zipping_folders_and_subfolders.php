@@ -1,35 +1,54 @@
 <?php
-// set backup filename
-$archiveName = 'backup_'.date('d_m_Y');
-
-// define some basics
-ini_set('max_execution_time', 600);
-ini_set('memory_limit','1024M');
-$rootPath =realpath(dirname(__FILE__));
-
-// If a file with that name already exists delete it
-if(file_exists($rootPath.'/'.$archiveName)){
-	unlink($rootPath.'/'.$archiveName);
-	echo '<p>Delete and create.</p>';
+//Don't forget to remove the trailing slash
+$the_folder = '/path/to/folder/to/be/zipped';
+$zip_file_name = '/path/to/zip/archive.zip';
+$za = new FlxZipArchive;
+$res = $za->open($zip_file_name, ZipArchive::CREATE);
+if($res === TRUE) {
+    $za->addDir($the_folder, basename($the_folder));
+    $za->close();
+}else{
+    echo 'Could not create a zip archive';
 }
+class FlxZipArchive extends ZipArchive {
+    /**
+     * Add a Dir with Files and Subdirs to the archive
+     *
+     * @param string $location Real Location
+     * @param string $name Name in Archive
+     * @author Nicolas Heimann
+     * @access private
+     **/
 
-// initialize the ZIP archive
-$zip = new ZipArchive;
-$zip->open($archiveName, ZipArchive::CREATE);
+    public function addDir($location, $name) {
+        $this->addEmptyDir($name);
 
-// create recursive directory iterator
-$files = new RecursiveIteratorIterator (new RecursiveDirectoryIterator($rootPath), RecursiveIteratorIterator::LEAVES_ONLY);
+        $this->addDirDo($location, $name);
+     } // EO addDir;
 
-// let's iterate
-foreach ($files as $name => $file) {
-	$filePath = $file->getRealPath();
-	$zip->addFile($filePath);
-}
+    /**
+     * Add Files & Dirs to archive.
+     *
+     * @param string $location Real Location
+     * @param string $name Name in Archive
+     * @author Nicolas Heimann
+     * @access private
+     **/
 
-// close the zip file
-if (!$zip->close()) {
-	echo '<p>There was a problem writing the ZIP archive.</p>';
-} else {
-	echo '<p>Successfully created the ZIP Archive!</p>';
+    private function addDirDo($location, $name) {
+        $name .= '/';
+        $location .= '/';
+
+        // Read all Files in Dir
+        $dir = opendir ($location);
+        while ($file = readdir($dir))
+        {
+            if ($file == '.' || $file == '..') continue;
+
+            // Rekursiv, If dir: FlxZipArchive::addDir(), else ::File();
+            $do = (filetype( $location . $file) == 'dir') ? 'addDir' : 'addFile';
+            $this->$do($location . $file, $name . $file);
+        }
+    } // EO addDirDo();
 }
 ?>
