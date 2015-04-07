@@ -40,9 +40,9 @@ if($res ===TRUE) {
 /* Create MySQL database backup */
 $backupDatabase = new Backup_Database(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
 if ($sql_text=$backupDatabase->backupTables(TABLES)){
-	$str.=date('d-m-Y H:i:s').' Create MySQL database backup '$sql_backup_filename.PHP_EOL;
+	$str.=date('d-m-Y H:i:s').' Create MySQL database backup '.$sql_backup_filename.PHP_EOL;
 }else{
-	$str.=date('d-m-Y H:i:s').' Could not create MySQL database backup '$sql_backup_filename.PHP_EOL;
+	$str.=date('d-m-Y H:i:s').' Could not create MySQL database backup '.$sql_backup_filename.PHP_EOL;
 }
 $sql_backup_filename_open = fopen($sql_backup_filename, 'w');
 fwrite($sql_backup_filename_open, $sql_text);
