@@ -55,11 +55,13 @@ if ($ftp_conn!==FALSE){
 	$login = ftp_login($ftp_conn, $ftp_user, $ftp_pass);
 	if (ftp_put($ftp_conn, $ftp_file_path.$zip_backup_filename, $zip_backup_filename, FTP_ASCII)){
 		$str.=date('d-m-Y H:i:s').' Successfully uploaded '.$zip_backup_filename.PHP_EOL;
+		unlink($zip_backup_filename);
 	}else{
 		$str.=date('d-m-Y H:i:s').' Error uploading '.$zip_backup_filename.PHP_EOL;
 	}
 	if (ftp_put($ftp_conn, $ftp_file_path.$sql_backup_filename, $sql_backup_filename, FTP_ASCII)){
 		$str.=date('d-m-Y H:i:s').' Successfully uploaded '.$sql_backup_filename.PHP_EOL;
+		unlink($sql_backup_filename);
 	}else{
 		$str.=date('d-m-Y H:i:s').' Error uploading '.$sql_backup_filename.PHP_EOL;
 	}
