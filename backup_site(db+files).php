@@ -1,41 +1,31 @@
 <?php
 date_default_timezone_set('Europe/Kiev');
 error_reporting(E_ALL);
-$log_file = fopen('backup_logs.txt', 'a');
+ini_set('max_execution_time', 3000);
+$backup_folder = realpath(dirname(__FILE__));
+$log_file = fopen($backup_folder.'/backup_logs.txt', 'a');
 $str='';
 
 /* Enter Backup folder information */
-$sitename='cultura.menu';
-$backup_folder = realpath(dirname(__FILE__));
-$zip_backup_filename = $sitename.'_'.date('d_m_Y').'.zip';
+$sitename='Enter your site name';
+$zip_backup_filename = $backup_folder.'/'.$sitename.'_'.date('d_m_Y').'.zip';
 if (file_exists($zip_backup_filename)) unlink($zip_backup_filename);
 
 /* Enter MySQL Database information */
-define('DB_NAME', 'cultura-menu');
-define('DB_USER', 'cultura-menu_u');
-define('DB_PASSWORD', 'Su0ib29~');
-define('DB_HOST', 'localhost');
+define('DB_NAME', '');
+define('DB_USER', '');
+define('DB_PASSWORD', '');
+define('DB_HOST', '');
 define('DB_CHARSET', 'utf8');
 define("TABLES", '*');
-$sql_backup_filename = $sitename.'_'.date('d_m_Y').'.sql';
+$sql_backup_filename = $backup_folder.'/'.$sitename.'_'.date('d_m_Y').'.sql';
 if (file_exists($sql_backup_filename)) unlink($sql_backup_filename);
 
 /* FTP Server Configuration */
-$ftp_server = "178.158.220.107";
-$ftp_file_path='/ftp_shares/backup/';
-$ftp_user='ubackup';
-$ftp_pass='Ew?qW483!J';
-
-/* Create zip archive */
-$zip = new FlxZipArchive;
-$res = $zip->open($zip_backup_filename, ZipArchive::CREATE);
-if($res ===TRUE) {
-	$zip->addDir($backup_folder, basename($backup_folder));
-	$zip->close();
-	$str.=date('d-m-Y H:i:s').' Create zip archive '.$zip_backup_filename.PHP_EOL;
-}else{
-	$str.=date('d-m-Y H:i:s').' Could not create a zip archive '.$zip_backup_filename.PHP_EOL;
-}
+$ftp_server = '';
+$ftp_file_path='';
+$ftp_user='';
+$ftp_pass='';
 
 /* Create MySQL database backup */
 $backupDatabase = new Backup_Database(DB_HOST, DB_USER, DB_PASSWORD, DB_NAME);
@@ -48,22 +38,32 @@ $sql_backup_filename_open = fopen($sql_backup_filename, 'w');
 fwrite($sql_backup_filename_open, $sql_text);
 fclose($sql_backup_filename_open);
 
+/* Create zip archive */
+$zip = new FlxZipArchive;
+$res = $zip->open($zip_backup_filename, ZipArchive::CREATE);
+if($res ===TRUE) {
+	$zip->addDir($backup_folder, basename($backup_folder));
+	$zip->close();
+	$str.=date('d-m-Y H:i:s').' Create zip archive '.$zip_backup_filename.PHP_EOL;
+}else{
+	$str.=date('d-m-Y H:i:s').' Could not create a zip archive '.$zip_backup_filename.PHP_EOL;
+}
 
-/* FTP upload backup zip archive and MySQL database */
+/* FTP upload backup zip archive and MySQL database  */
 $ftp_conn = ftp_connect($ftp_server);
 if ($ftp_conn!==FALSE){
 	$login = ftp_login($ftp_conn, $ftp_user, $ftp_pass);
-	if (ftp_put($ftp_conn, $ftp_file_path.$zip_backup_filename, $zip_backup_filename, FTP_ASCII)){
+	if (ftp_put($ftp_conn, $ftp_file_path.$sitename.'_'.date('d_m_Y').'.zip', $zip_backup_filename, FTP_BINARY)){
 		$str.=date('d-m-Y H:i:s').' Successfully uploaded '.$zip_backup_filename.PHP_EOL;
 		unlink($zip_backup_filename);
+		unlink($sql_backup_filename);
+		$files = ftp_nlist($ftp_conn, "-t $ftp_file_path");
+		$c=count($files);
+		for ($i=$c-1;$i>4;$i--){
+			ftp_delete($ftp_conn, $files[$i]);
+		}
 	}else{
 		$str.=date('d-m-Y H:i:s').' Error uploading '.$zip_backup_filename.PHP_EOL;
-	}
-	if (ftp_put($ftp_conn, $ftp_file_path.$sql_backup_filename, $sql_backup_filename, FTP_ASCII)){
-		$str.=date('d-m-Y H:i:s').' Successfully uploaded '.$sql_backup_filename.PHP_EOL;
-		unlink($sql_backup_filename);
-	}else{
-		$str.=date('d-m-Y H:i:s').' Error uploading '.$sql_backup_filename.PHP_EOL;
 	}
 	ftp_close($ftp_conn);
 }else{
